@@ -60,7 +60,7 @@ router.get('/', function (req, res, next) {
  * GET authenticated user details
  */
 router.get('/me', function(req, res, next) {
-  req.projection = 'name facebookId results -_id';
+  req.projection = 'name facebookId results.winner results.loser results.correct -_id';
   next();
 }, authenticate, function (req, res) {
   res.json(req.user);
