@@ -22,20 +22,12 @@ exports.query = function(sql, values, callback) {
     if (err) {
       console.error('error connecting: ' + err.stack);
       callback(err, null);
-      return;
+    } else {
+      console.log('connected as id ' + connection.threadId);
+
+      connection.query(sql, values, callback);
     }
 
-    console.log('connected as id ' + connection.threadId);
-
-    connection.query(sql, values, function (err, rows) {
-      connection.release();
-
-      if (err) {
-        console.error('error querying: ' + err.stack);
-        callback(err, null);
-      } else {
-        callback(null, rows);
-      }
-    });
+    connection.release();
   });
 };
