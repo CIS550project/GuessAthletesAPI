@@ -10,14 +10,27 @@ This is the API accompanying the Guess Athletes app. It handles all data access 
 
 3. Start the server with `npm server`.
 
-## Endpoints
+## API Reference
 
-GET `/user`
-POST `/user`
-GET `/user/{id}`
-POST `/user/{id}/result`
+### Authentication
 
-GET `/athlete`
-GET `/athlete/{id}`
+Some endpoints require user authentication via a Facebook access token. This token should be retrieved by the frontend client via the appropriate Facebook SDK.
 
-GET `/game/matchup`
+Include the Facebook access token as an `Authorization: Bearer [token]` request header, or with an `access_token=[token]` query parameter in the URL. 
+
+### Endpoints
+
+**User**
+- GET `/user` - all user listing with names and scores
+- ^GET `/user/{id}`
+- ^POST `/user/{id}/result`
+
+**Athlete**
+- GET `/athlete`
+- GET `/athlete/{id}`
+
+
+**Game**
+- GET `/game/matchup`
+
+*^ denotes authentication required*

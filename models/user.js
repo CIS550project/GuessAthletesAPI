@@ -9,9 +9,8 @@ var Result = new Schema({
 
 var UserSchema = new Schema({
   name: String,
-  fbId: String,
-  fbToken: String,
-  results: [Result]
+  facebookId: { type: String, unique: true },
+  results: { type: [Result], index: true }
 });
 
 module.exports = mongo.model('User', UserSchema);

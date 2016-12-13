@@ -6,5 +6,10 @@
     "password": "",
     "database": ""
   },
-  "mongodb": ""
+  "mongodb": "",
+  "facebook": {
+    "appId": "",
+    "appSecret": "",
+    "version": "v2.8"
+  }
 }

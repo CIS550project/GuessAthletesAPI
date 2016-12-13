@@ -1,46 +1,85 @@
 var express = require('express');
 var router = express.Router();
 var User = require('../models/user');
+var fb = require('../facebook');
 
-/* GET user list */
+// USER API ENDPOINTS
+
+/**
+ * GET user stats list
+ */
 router.get('/', function (req, res, next) {
-  User.find({}, 'name', function (err, docs) {
+  User.aggregate([
+    {
+      $project: {
+        _id: true,
+        name: true,
+        results: true,
+        numResults: { $size: "$results" }
+      }
+    },
+    {
+      $unwind: "$results"
+    },
+    {
+      $match: {
+        "results.correct": true
+      }
+    },
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$name" },
+        numResults: { $first: "$numResults" },
+        correct: { $sum: 1 }
+      }
+    },
+    {
+      $project: {
+        _id: false,
+        name: "$name",
+        points: {
+          $multiply: [
+            { $divide: ["$correct", "$numResults"] },
+            "$correct",
+            100
+          ]
+        }
+      }
+    }
+  ], function (err, users) {
     if (err) {
       next(err);
     } else {
-      res.json(docs);
+      res.json(users);
     }
   });
 });
 
-/* GET user info */
-router.get('/:id', function (req, res, next) {
-  User.findOne(req.param.id, function (err, docs) {
-    if (err) {
-      next(err);
-    } else if (docs.length == 0) {
-      res.status(404).send('User not found');
-    } else {
-      res.json(docs);
-    }
-  });
+/**
+ * GET authenticated user details
+ */
+router.get('/me', function(req, res, next) {
+  req.projection = 'name facebookId results -_id';
+  next();
+}, authenticate, function (req, res) {
+  res.json(req.user);
 });
 
-/* POST new user */
-router.post('/', function (req, res, next) {
-  var newUser = new User(req.body);
-  newUser.save(function (err, doc) {
-    if (err) {
-      next(err);
-    } else {
-      res.json(doc);
-    }
-  });
+/**
+ * GET authenticated user stats
+ */
+router.get('/me/stats', authenticate, calculateStats, function (req, res) {
+  res.json(req.stats);
 });
 
-/* POST new game result */
-router.post('/:id/result', function (req, res, next) {
-  var user = User.findOne(req.param.id, function (err, doc) {
+/**
+ * POST new game result as { winner: [id], loser: [id], correct: [boolean] }
+ */
+router.post('/me/result', authenticate, function (req, res, next) {
+  var user = req.user;
+  user.results.push(req.body);
+  user.save(function (err, doc) {
     if (err) {
       next(err);
     } else {
@@ -48,16 +87,66 @@ router.post('/:id/result', function (req, res, next) {
       next();
     }
   });
-}, function (req, res, next) {
-  var user = req.user;
-  user.results.push(req.body);
-  user.save(function (err, doc) {
-    if (err) {
-      next(err);
+}, calculateStats, function (req, res) {
+  res.json(req.stats);
+});
+
+
+// HELPER FUNCTIONS
+
+/**
+ * Middleware to authenticate the request using a Facebook access token passed in the bearer field and
+ * return the associated user. Token is taken from req.token field (set by express-bearer-token middleware).
+ *
+ * Creates a new user before returning it if there is currently no user linked to the Facebook user ID.
+ *
+ * Additionally accepts an optional MongoDB projection in the req.projection field.
+ */
+function authenticate(req, res, next) {
+  fb.api('me', { fields: ['id', 'name'], access_token: req.token }, function (fbRes) {
+    if (!fbRes) {
+      next("Unknown error occured in the Facebook SDK");
+    } else if (fbRes.error) {
+      next(fbRes.error);
     } else {
-      res.json(doc.results);
+      User.findOne({ facebookId: fbRes.id }, req.projection, function(err, user) {
+        if (err) {
+          next(err);
+        } else if (!user) {
+          // Create a new user
+          var newUser = new User({ name: fbRes.name, facebookId: fbRes.id });
+          newUser.save(function (err, createdUser) {
+            req.user = createdUser;
+            next();
+          });
+        } else {
+          req.user = user;
+          next();
+        }
+      });
     }
   });
-});
+}
+
+/**
+ * Calculates and stores basic game statistics for the current user (in the req.user field).
+ */
+function calculateStats(req, res, next) {
+  var stats = { points: 0, accuracy: null, wins: 0, losses: 0 };
+  var results = req.user.results;
+
+  stats.plays = results.length;
+  if (stats.plays == 0) {
+    next();
+  }
+
+  stats.wins = results.reduce((total, result) => total + (result.correct ? 1 : 0), 0);
+  stats.losses = results.reduce((total, result) => total + (result.correct ? 0 : 1), 0);
+  stats.accuracy = stats.wins / stats.plays;
+  stats.points = stats.wins * 100 * stats.accuracy;
+
+  req.stats = stats;
+  next();
+}
 
 module.exports = router;

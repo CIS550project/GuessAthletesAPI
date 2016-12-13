@@ -5,6 +5,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var cors = require('cors');
+var bearerToken = require('express-bearer-token');
 
 var index = require('./routes/index');
 var athlete = require('./routes/athlete');
@@ -25,6 +26,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
+app.use(bearerToken());
 
 app.use('/', index);
 app.use('/athlete', athlete);
