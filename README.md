@@ -23,6 +23,7 @@ Include the Facebook access token as an `Authorization: Bearer [token]` request 
 **User**
 - **GET `/user`** - all user listing with names and scores
 - **^GET `/user/me`** - get authenticated user details including stats
+- **^GET `/user/me/friends`** - list the user's Facebook friends who have played the game along with their stats
 - **^POST `/user/me/result`** - send a new game result with format `{ winner: [id], lower: [id], correct: [boolean] }`; response body contains updated user stats
 
 **Athlete**
