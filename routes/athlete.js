@@ -49,6 +49,7 @@ function getAthleteSports(req, res, next) {
       next(err);
     } else if (rows.length == 0) {
       res.status(404).send("Athlete not found");
+      next();
     } else {
       var arr = [];
       for (var i = 0; i < rows.length; i++) {
@@ -71,6 +72,7 @@ function getAthleteEvents(req, res, next) {
       next(err);
     } else if (rows.length == 0) {
       res.status(404).send("Athlete not found");
+      next();
     } else {
       req.events = rows;
       next();
