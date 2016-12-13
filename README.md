@@ -22,8 +22,8 @@ Include the Facebook access token as an `Authorization: Bearer [token]` request 
 
 **User**
 - GET `/user` - all user listing with names and scores
-- ^GET `/user/{id}`
-- ^POST `/user/{id}/result`
+- ^GET `/user/me`
+- ^POST `/user/me/result`
 
 **Athlete**
 - GET `/athlete`
