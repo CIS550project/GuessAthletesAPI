@@ -28,14 +28,14 @@ exports.query = function(sql, values, callback) {
     console.log('connected as id ' + connection.threadId);
 
     connection.query(sql, values, function (err, rows) {
+      connection.release();
+
       if (err) {
         console.error('error querying: ' + err.stack);
         callback(err, null);
-        return;
+      } else {
+        callback(null, rows);
       }
-
-      callback(null, rows)
-      connection.release();
     });
   });
 };
