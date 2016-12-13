@@ -25,9 +25,10 @@ exports.query = function(sql, values, callback) {
     } else {
       console.log('connected as id ' + connection.threadId);
 
-      connection.query(sql, values, callback);
+      connection.query(sql, values, function (err, rows) {
+        connection.release();
+        callback(err, rows);
+      });
     }
-
-    connection.release();
   });
 };
