@@ -62,15 +62,8 @@ router.get('/', function (req, res, next) {
 router.get('/me', function(req, res, next) {
   req.projection = 'name facebookId results.winner results.loser results.correct -_id';
   next();
-}, authenticate, function (req, res) {
-  res.json(req.user);
-});
-
-/**
- * GET authenticated user stats
- */
-router.get('/me/stats', authenticate, calculateStats, function (req, res) {
-  res.json(req.stats);
+}, authenticate, calculateStats, function (req, res) {
+  res.json({ user: req.user, stats: req.stats });
 });
 
 /**

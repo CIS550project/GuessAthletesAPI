@@ -21,16 +21,15 @@ Include the Facebook access token as an `Authorization: Bearer [token]` request 
 ### Endpoints
 
 **User**
-- GET `/user` - all user listing with names and scores
-- ^GET `/user/me`
-- ^POST `/user/me/result`
+- **GET `/user`** - all user listing with names and scores
+- **^GET `/user/me`** - get authenticated user details including stats
+- **^POST `/user/me/result`** - send a new game result with format `{ winner: [id], lower: [id], correct: [boolean] }`; response body contains updated user stats
 
 **Athlete**
-- GET `/athlete`
-- GET `/athlete/{id}`
-
+- **GET `/athlete`** - all athlete listing
+- **GET `/athlete/{id}`** - get athlete details
 
 **Game**
-- GET `/game/matchup`
+- **GET `/game/matchup`** - get a new athlete matchup as an array of 2 athlete IDs
 
 *^ denotes authentication required*
