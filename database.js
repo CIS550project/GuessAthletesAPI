@@ -1,4 +1,3 @@
-var exports = module.exports = {};
 var config = require('./config');
 var mysql = require('mysql');
 var pool = mysql.createPool(config.mysql);
@@ -17,18 +16,4 @@ function handleDisconnect(client) {
   });
 }
 
-exports.query = function(sql, values, callback) {
-  pool.getConnection(function(err, connection) {
-    if (err) {
-      console.error('error connecting: ' + err.stack);
-      callback(err, null);
-    } else {
-      console.log('connected as id ' + connection.threadId);
-
-      connection.query(sql, values, function (err, rows) {
-        connection.release();
-        callback(err, rows);
-      });
-    }
-  });
-};
+module.exports = pool;
