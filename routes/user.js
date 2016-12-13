@@ -15,33 +15,33 @@ router.get('/', function (req, res, next) {
         _id: true,
         name: true,
         results: true,
-        numResults: { $size: "$results" }
+        numResults: { $size: '$results' }
       }
     },
     {
-      $unwind: "$results"
+      $unwind: '$results'
     },
     {
       $match: {
-        "results.correct": true
+        'results.correct': true
       }
     },
     {
       $group: {
-        _id: "$_id",
-        name: { $first: "$name" },
-        numResults: { $first: "$numResults" },
+        _id: '$_id',
+        name: { $first: '$name' },
+        numResults: { $first: '$numResults' },
         correct: { $sum: 1 }
       }
     },
     {
       $project: {
         _id: false,
-        name: "$name",
+        name: '$name',
         points: {
           $multiply: [
-            { $divide: ["$correct", "$numResults"] },
-            "$correct",
+            { $divide: ['$correct', '$numResults'] },
+            '$correct',
             100
           ]
         }
@@ -91,6 +91,73 @@ router.post('/me/result', authenticate, function (req, res, next) {
   res.json(req.stats);
 });
 
+/**
+ * GET user friend stats
+ */
+router.get('/me/friends', function (req, res, next) {
+  req.scope = ['friends'];
+  next();
+}, authenticate, function (req, res, next) {
+  if (req.fb.friends.data.length == 0) {
+    res.json([]);
+  } else {
+    var ids = req.fb.friends.data.map(friend => friend.id);
+    User.aggregate([
+      {
+        $match: {
+          facebookId: { $in: ids }
+        }
+      },
+      {
+        $project: {
+          _id: true,
+          name: true,
+          results: true,
+          facebookId: true,
+          numResults: { $size: '$results' }
+        }
+      },
+      {
+        $unwind: '$results'
+      },
+      {
+        $match: {
+          'results.correct': true
+        }
+      },
+      {
+        $group: {
+          _id: '$_id',
+          name: { $first: '$name' },
+          facebookId: { $first: '$facebookId' },
+          numResults: { $first: '$numResults' },
+          correct: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: false,
+          name: '$name',
+          facebookId: '$facebookId',
+          stats: {
+            accuracy: { $divide: ['$correct', '$numResults'] },
+            wins: '$correct',
+            losses: { $subtract: ['$numResults', '$correct'] },
+            plays: '$numResults',
+            points: { $multiply: [{ $divide: ['$correct', '$numResults'] }, '$correct', 100] }
+          }
+        }
+      }
+    ], function (err, users) {
+      if (err) {
+        next(err);
+      } else {
+        res.json(users);
+      }
+    });
+  }
+});
+
 
 // HELPER FUNCTIONS
 
@@ -101,14 +168,22 @@ router.post('/me/result', authenticate, function (req, res, next) {
  * Creates a new user before returning it if there is currently no user linked to the Facebook user ID.
  *
  * Additionally accepts an optional MongoDB projection in the req.projection field.
+ *
+ * The Facebook response is stored in req.fb. Additional fields can be added to the scope through req.scope[].
  */
 function authenticate(req, res, next) {
-  fb.api('me', { fields: ['id', 'name'], access_token: req.token }, function (fbRes) {
+  fields = ['id', 'name'];
+  if (Array.isArray(req.scope)) {
+    Array.prototype.push.apply(fields, req.scope);
+  }
+
+  fb.api('me', { fields: fields, access_token: req.token }, function (fbRes) {
     if (!fbRes) {
-      next("Unknown error occured in the Facebook SDK");
+      next('Unknown error occured in the Facebook SDK');
     } else if (fbRes.error) {
       next(fbRes.error);
     } else {
+      req.fb = fbRes;
       User.findOne({ facebookId: fbRes.id }, req.projection, function(err, user) {
         if (err) {
           next(err);
