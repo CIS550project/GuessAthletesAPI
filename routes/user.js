@@ -22,9 +22,7 @@ router.get('/', function (req, res, next) {
       $unwind: '$results'
     },
     {
-      $match: {
-        'results.correct': true
-      }
+      $match: { 'results.correct': true }
     },
     {
       $group: {
@@ -39,13 +37,12 @@ router.get('/', function (req, res, next) {
         _id: false,
         name: '$name',
         points: {
-          $multiply: [
-            { $divide: ['$correct', '$numResults'] },
-            '$correct',
-            100
-          ]
+          $multiply: [{ $divide: ['$correct', '$numResults'] }, '$correct', 100]
         }
       }
+    },
+    {
+      $sort: { points: -1, name: 1 }
     }
   ], function (err, users) {
     if (err) {
@@ -140,6 +137,9 @@ router.get('/me/friends', function (req, res, next) {
             points: { $multiply: [{ $divide: ['$correct', '$numResults'] }, '$correct', 100] }
           }
         }
+      },
+      {
+        $sort: { points: -1, name: 1 }
       }
     ], function (err, users) {
       if (err) {
